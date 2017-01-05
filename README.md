@@ -64,16 +64,6 @@ Annotating a function definition prints every time the function is used, e.g.,
 │  │     x * rand(y) = [0.4288,0.781806]
 ├─ h(x,y) = [0.4288,0.781806]
 z * h(x,y) = [1.2864,2.34542]@showeach z*h(x, y)
-┌─ z = 3
-│  ┌─ x = 1
-│  ├─ y = 2
-│  ├─ in function h(x,y):
-│  │     ┌─ x = 1
-│  │     │  ┌─ y = 2
-│  │     ├─ rand(y) = [0.4288,0.781806]
-│  │     x * rand(y) = [0.4288,0.781806]
-├─ h(x,y) = [0.4288,0.781806]
-z * h(x,y) = [1.2864,2.34542]
 ```
 
 ## Development
