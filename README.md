@@ -75,3 +75,7 @@ z * h(x,y) = [1.2864,2.34542]@showeach z*h(x, y)
 ├─ h(x,y) = [0.4288,0.781806]
 z * h(x,y) = [1.2864,2.34542]
 ```
+
+## Development
+
+This package is in a very early stage of development and things can break any time. If you find a bug or simply have a question, just open an issue.
