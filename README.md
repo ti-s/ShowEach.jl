@@ -2,10 +2,6 @@
 
 [![Build Status](https://travis-ci.org/ti-s/ShowEach.jl.svg?branch=master)](https://travis-ci.org/ti-s/ShowEach.jl)
 
-[![Coverage Status](https://coveralls.io/repos/ti-s/ShowEach.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/ti-s/ShowEach.jl?branch=master)
-
-[![codecov.io](http://codecov.io/github/ti-s/ShowEach.jl/coverage.svg?branch=master)](http://codecov.io/github/ti-s/ShowEach.jl?branch=master)
-
 This package provides the `@showeach` macro which assists with poor man's debugging. In addition to `@show`ing the annotated expression, a tree of every subexpression is printed (unlike `@show`, printing literals is omitted). Thus, `@showeach` helps to understand what is going on in powerful one liners that occur frequently in Julia.
 
 ## Usage
