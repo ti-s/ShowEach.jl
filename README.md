@@ -36,7 +36,7 @@ julia> @showeach a*f(rand(z), g(y))[x]
 ├─ (f(rand(z),g(y)))[x] = 2.06781
 a * (f(rand(z),g(y)))[x] = [2.06781,4.13563,6.20344]
 
-@showeach sum(i for i = x:z if isodd(i))
+julia> @showeach sum(i for i = x:z if isodd(i))
 ┌─ x = 1
 ├─ z = 3
 │  ┌─ i = 1
