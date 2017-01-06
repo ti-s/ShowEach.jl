@@ -66,48 +66,76 @@ julia> @showeach z*h(x, y)
 │  │     x * rand(y) = [0.4288,0.781806]
 ├─ h(x,y) = [0.4288,0.781806]
 z * h(x,y) = [1.2864,2.34542]
+```
 
+The output is suppressed after `n` expressions have been printed at the same level of a tree:
+
+```Julia
+julia> @showeach f(x) = 2x
+
+julia> @showeach map(f, 1:100)
+┌─ f = f (generic function with 1 method)
+├─ in function f(x):
+│     ┌─ x = 1
+│     2x = 2
+├─ in function f(x):
+│     ┌─ x = 2
+│     2x = 4
+├─ in function f(x):
+│     ┌─ x = 3
+│     2x = 6
+├─ in function f(x):
+│     ┌─ x = 4
+│     2x = 8
+├─ in function f(x):
+│     ┌─ x = 5
+│     2x = 10
+├─  ⋮
+map(f,1:100) = [2,4,6  …  196,198,200]
+```
+However, this only works within a `@showeach` expression. Calling `map(f, 1:100)` without `@showeach` will result in a long output. Unfortunately, due to a Julia issue, `@showeach map(i->2i, 1:100)` does not work yet. Instead, use a named function as above.
+
+The maximum number of expressions can be set with `set_loop_limit(n-1)`:
+
+```Julia
 julia> @showeach calc_pi(M) = 4 * sum(rand()^2 + rand()^2 < 1 for i = 1:M) / M
 
-julia> calc_pi(5)
+julia> set_loop_limit(3)
+
+julia> calc_pi(10^5)
 in function calc_pi(M):
-         ┌─ M = 5
-         │        ┌─ rand() = 0.0610889
-         │     ┌─ rand() ^ 2 = 0.00373186
-         │     │  ┌─ rand() = 0.899361
-         │     ├─ rand() ^ 2 = 0.80885
-         │  ┌─ rand() ^ 2 + rand() ^ 2 = 0.812582
+         ┌─ M = 100000
+         │        ┌─ rand() = 0.841332
+         │     ┌─ rand() ^ 2 = 0.707839
+         │     │  ┌─ rand() = 0.164777
+         │     ├─ rand() ^ 2 = 0.0271516
+         │  ┌─ rand() ^ 2 + rand() ^ 2 = 0.734991
          ├─ rand() ^ 2 + rand() ^ 2 < 1 = true
-         │        ┌─ rand() = 0.818576
-         │     ┌─ rand() ^ 2 = 0.670067
-         │     │  ┌─ rand() = 0.161536
-         │     ├─ rand() ^ 2 = 0.026094
-         │  ┌─ rand() ^ 2 + rand() ^ 2 = 0.696161
-         ├─ rand() ^ 2 + rand() ^ 2 < 1 = true
-         │        ┌─ rand() = 0.869511
-         │     ┌─ rand() ^ 2 = 0.756049
-         │     │  ┌─ rand() = 0.773002
-         │     ├─ rand() ^ 2 = 0.597532
-         │  ┌─ rand() ^ 2 + rand() ^ 2 = 1.35358
+         │        ┌─ rand() = 0.977022
+         │     ┌─ rand() ^ 2 = 0.954572
+         │     │  ┌─ rand() = 0.70994
+         │     ├─ rand() ^ 2 = 0.504014
+         │  ┌─ rand() ^ 2 + rand() ^ 2 = 1.45859
          ├─ rand() ^ 2 + rand() ^ 2 < 1 = false
-         │        ┌─ rand() = 0.110435
-         │     ┌─ rand() ^ 2 = 0.0121959
-         │     │  ┌─ rand() = 0.2395
-         │     ├─ rand() ^ 2 = 0.0573603
-         │  ┌─ rand() ^ 2 + rand() ^ 2 = 0.0695561
+         │        ┌─ rand() = 0.622204
+         │     ┌─ rand() ^ 2 = 0.387138
+         │     │  ┌─ rand() = 0.349908
+         │     ├─ rand() ^ 2 = 0.122436
+         │  ┌─ rand() ^ 2 + rand() ^ 2 = 0.509574
          ├─ rand() ^ 2 + rand() ^ 2 < 1 = true
-         │        ┌─ rand() = 0.103921
-         │     ┌─ rand() ^ 2 = 0.0107996
-         │     │  ┌─ rand() = 0.831314
-         │     ├─ rand() ^ 2 = 0.691083
-         │  ┌─ rand() ^ 2 + rand() ^ 2 = 0.701883
-         ├─ rand() ^ 2 + rand() ^ 2 < 1 = true
-      ┌─ sum((rand() ^ 2 + rand() ^ 2 < 1 for i = 1:M)) = 4
-   ┌─ 4 * sum((rand() ^ 2 + rand() ^ 2 < 1 for i = 1:M)) = 16
-   ├─ M = 5
-   (4 * sum((rand() ^ 2 + rand() ^ 2 < 1 for i = 1:M))) / M = 3.2
+         ├─  ⋮
+      ┌─ sum((rand() ^ 2 + rand() ^ 2 < 1 for i = 1:M)) = 78498
+   ┌─ 4 * sum((rand() ^ 2 + rand() ^ 2 < 1 for i = 1:M)) = 313992
+   ├─ M = 100000
+   (4 * sum((rand() ^ 2 + rand() ^ 2 < 1 for i = 1:M))) / M = 3.13992
 ```
+
+## Caveats
+- `@showeach` does not produce a correct output with anonymous functions, `let` blocks, and other macros. Nevertheless, the return values of such expressions should be correct.
+- If an expression throws an error, the indentation is *not* reset automatically and one has to call `reset_indent()` manually.
+- The `loop_limit` suppresses any output even outside loops. This will be improved in the future.
+
 
 ## Development
 
-This package is in a very early stage of development and things can break any time. If you find a bug or simply have a question, just open an issue.
+This package is in an early stage of development and things can break any time. If you find a bug or simply have a question, just open an issue.
