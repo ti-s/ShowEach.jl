@@ -1,6 +1,6 @@
 module ShowEach
 
-export @showeach, gather_stdout, reset_indent
+export @showeach, gather_stdout, set_loop_limit, reset_indent
 
 @enum Position Top TopFunction Middle MiddleFunction
 
@@ -11,24 +11,32 @@ const CompactIO = (IOContext(origSTDOUT, limit=true, compact=true, displaysize=(
 type PrintState
     level::Int
     pos::Vector{Position}
+    count::Vector{Int}
+    loop_limit::Int
     redirect::Bool
     io::IO    # Does this matter for performance?
 end
 
 #PrintState{T<:IO}(level, pos, redirect, io::T) = PrintState{T}(level, pos, redirect, io)
 
-const state = PrintState(0, [], false, STDOUT)
+const state = PrintState(0, [], [], 6, false, STDOUT)
 
-inc(pos::Position) = (state.level += 1; push!(state.pos, pos))
+inc(pos::Position) = (state.level += 1; push!(state.pos, pos); push!(state.count, 0))
 inc() = inc(Top)
-dec() = (state.level -= 1; pop!(state.pos))
+dec() = (state.level -= 1; pop!(state.pos); pop!(state.count))
+
+inc_counter() = (state.level > 0 && state.pos[end] != MiddleFunction &&  (state.count[end] += 1))
+
+isloop() = (state.level > 0 && any(state.count .>= state.loop_limit))
 
 function reset_indent()
     state.level = 0
     state.pos = []
+    state.count = []
 end
 
-gather_stdout(b::Bool) = (state.redirect = b)
+gather_stdout(b::Bool) = (reset_indent(); state.redirect = b)
+set_loop_limit(n::Int) = (reset_indent(); state.loop_limit = n)
 
 function indent_all_but_top()
     ret = ""
@@ -65,6 +73,7 @@ function indent()
         elseif state.pos[end] == MiddleFunction
             ret = ret*"   "
         else
+            inc_counter()
             ret = ret*"├─ "
         end
     end
@@ -73,11 +82,18 @@ end
 
 
 function show_in_tree(expr::String, value)
-    value_repr = IOBuffer()
-    show(IOContext(value_repr, CompactIO), "text/plain", value)
-    l = length(expr) + 3
-    output = replace(String(value_repr), "\n", "\n"*indent(" "^l))
-    println(state.io, indent(), expr, " = ", output)
+    if !isloop()
+        value_repr = IOBuffer()
+        show(IOContext(value_repr, CompactIO), "text/plain", value)
+        l = length(expr) + 3
+        output = replace(String(value_repr), "\n", "\n"*indent(" "^l))
+        println(state.io, indent(), expr, " = ", output)
+        if isloop()
+            println(state.io, indent(), " ⋮")
+        end
+    else
+        nothing
+    end
 end
 
 
@@ -100,11 +116,18 @@ end
 
 
 function show_in_tree(expr::String, value::Vector)
-    value_repr = IOBuffer()
-    show_vector_short(IOContext(value_repr, CompactIO), value, "[", "]")
-    l = length(expr) + 3
-    output = replace(String(value_repr), "\n", "\n"*indent(" "^l))
-    println(state.io, indent(), expr, " = ", output)
+    if !isloop()
+        value_repr = IOBuffer()
+        show_vector_short(IOContext(value_repr, CompactIO), value, "[", "]")
+        l = length(expr) + 3
+        output = replace(String(value_repr), "\n", "\n"*indent(" "^l))
+        println(state.io, indent(), expr, " = ", output)
+        if isloop()
+            println(state.io, indent(), " ⋮")
+        end
+    else
+        nothing
+    end
 end
 
 
@@ -115,7 +138,7 @@ end
 
 
 function showeach_func(expr::Expr)
-    new_inner_body = Expr(:block, :(println(state.io, indent(), "in function ", $(string(expr.args[1])), ":")), :(inc(TopFunction)), (showeach(e) for e in expr.args[2:end])...)
+    new_inner_body = Expr(:block, :(isloop() || (idt = indent(); isloop() ? println(state.io, indent(), " ⋮") : println(state.io, idt, "in function ", $(string(expr.args[1])), ":"))), :(inc(TopFunction)), (showeach(e) for e in expr.args[2:end])...)
     new_inner_body =  temporary_redirect_stdout(new_inner_body, "function "*string(expr.args[1]))
     new_body = :(try $(new_inner_body) finally dec() end)
     return Expr(expr.head, esc(expr.args[1]), :($new_body))

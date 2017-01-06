@@ -27,6 +27,8 @@ f(x, y) = x * y
 g(z) = 2z
 o = A(3)
 
+set_loop_limit(20)
+
 @test_output (@showeach 1) ""
 @test_output (@showeach x) "x = 1\n"
 @test_output (@showeach a += x) "x = 1\n"
@@ -419,4 +421,44 @@ in block
 foo
 bar
 end block
+"""
+
+set_loop_limit(6)
+@test_output (@showeach p(x) = 2x) """
+"""
+@test_output (@showeach map(p, 1:100)) """
+┌─ p = p (generic function with 2 methods)
+├─ in function p(x):
+│     ┌─ x = 1
+│     2x = 2
+├─ in function p(x):
+│     ┌─ x = 2
+│     2x = 4
+├─ in function p(x):
+│     ┌─ x = 3
+│     2x = 6
+├─ in function p(x):
+│     ┌─ x = 4
+│     2x = 8
+├─ in function p(x):
+│     ┌─ x = 5
+│     2x = 10
+├─  ⋮
+map(p,1:100) = [2,4,6  …  196,198,200]
+"""
+@test_output (@showeach sum(i for i = 1:10 if isodd(i))) """
+   ┌─ i = 1
+┌─ isodd(i) = true
+│  ┌─ i = 2
+├─ isodd(i) = false
+│  ┌─ i = 3
+├─ isodd(i) = true
+├─ i = 1
+│  ┌─ i = 4
+├─ isodd(i) = false
+│  ┌─ i = 5
+├─ isodd(i) = true
+├─ i = 3
+├─  ⋮
+sum((i for i = 1:10 if isodd(i))) = 25
 """
